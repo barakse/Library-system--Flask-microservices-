@@ -1,14 +1,8 @@
-import sys
-#sys.path.insert(0,'..')
-#sys.path.append('../')
-#sys.path.append('../Services')
-from importlib import import_module
-from os import abort
 from flask import Flask	
 from flask_restful import Api
-
-from Services.BookService import books, book
-
+import sys
+sys.path.append('../')
+from Services.BookService import book, books
 
 app = Flask(__name__)
 api = Api(app)
