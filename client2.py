@@ -25,7 +25,7 @@ clearJsonFile('./DB/books_dict.json')
 response = requests.post(EMPLOYEEBASE + "employees/add", data[0])
 response = requests.post(EMPLOYEEBASE + "employees/librarian/add", data[1]) 
 response = requests.delete(EMPLOYEEBASE + "employees/2")
-print(response.json())
+#print(response.json())
 list ='/employee/add','/employee'
 
 #GET EMPLOYEE
@@ -34,7 +34,7 @@ response = requests.get(EMPLOYEEBASE + "employees/1")
 
 #BOOK HANDLING
 response = requests.post(BOOKBASE + "books/add", book_data[0])
-print(response.json())
+#print(response.json())
 response = requests.put(BOOKBASE + "books/update/1", book_data[1])
 #response = requests.delete(BOOKBASE + "books/1")
 

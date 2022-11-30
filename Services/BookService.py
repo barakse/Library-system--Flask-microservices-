@@ -1,91 +1,70 @@
 from flask_restful import  Resource, abort
 from BookData import book_put_args
 import json
+from dbConnection import db
+from datetime import date
 
+db_books = db.get_collection("Books")
+db_Librarians = db.get_collection("Librarians")
+db_employees = db.get_collection("Employees")
 
 def abort_if_book_id_dosent_exist(book_id):
-    s = str(book_id)
-    with open('../DB/books_dict.json', 'r') as openfile:
-            books_dict = json.load(openfile)
-        
-    if s not in books_dict:
-        abort(404, message="couldnt find, isnt VALID...")
+    if (db_books.find_one({"id":book_id}) is None):
+        abort(404, message="There isnt a book with this ID...")
 
 def abort_if_book_exists(book_id):
-    with open('../DB/books_dict.json', 'r') as openfile:
-        books_dict = json.load(openfile)
-    if book_id in books_dict:
-        abort(409, message="empolyee already exists with that ID...")
+    if (db_books.find_one({"id":book_id}) is not None):
+        abort(409, message="book already exists with that ID...")
 
-def abort_if_librarian_isnt_exist(LibrarianID):
-    s = str(LibrarianID)
-    with open('../DB/librarian_dict.json', 'r') as openfile:
-        librarian_dict = json.load(openfile)
-    if s not in librarian_dict:
-        abort(404, message="couldnt find, isnt VALID...")
+def abort_if_librarian_isnt_valid(LibrarianID):
+    print(LibrarianID)
+
+    
+    if (db_Librarians.find_one({"id":int(LibrarianID)}) is not None):
+        if db_employees.find_one({"id":LibrarianID,"isFired": True}):
+            abort(408, message="This employee is fired!")
     else:
-        print(librarian_dict[s])
-        if librarian_dict[s]['isFired']:
-            abort(404, message="Sorry! librarian isnt working here anymore...")
+        abort(404, message="Sorry! librarian dosent exists")
 
 class book(Resource):
-    def get(self, book_id):
+    def get(self, book_id): #get DONE
         abort_if_book_id_dosent_exist(book_id)
-        with open('../DB/books_dict.json', 'r') as openfile:
-            books_dict = json.load(openfile)
-        return books_dict[str(book_id)]
+        books_dict = db_books.find_one({'id': book_id}, {'_id':0})
+        return books_dict
 
     def put(self, book_id):
         abort_if_book_id_dosent_exist(book_id)
-        with open('../DB/books_dict.json','r') as f:
-                books_dict = json.load(f)
-
         args = book_put_args.parse_args()
-        abort_if_librarian_isnt_exist(args.LibrarianID)
-
-        if args.id != str(book_id):
+        if args.id != book_id:
             abort(409, message="book id(key) dosent match to values id")
             
-        books_dict[args.id] = args
+        abort_if_librarian_isnt_valid(args.LibrarianID)
 
-        with open('../DB/books_dict.json','w') as f:
-            json.dump(books_dict,f)
+        args.dateAdded = date.isoformat(args.dateAdded)
+        item = db_books.find_one_and_update({"id":book_id}, {"$set":args},{'_id':0})
         
-        return books_dict[args.id], 201
+        return item, 201
 
     def delete(self, book_id):
         abort_if_book_id_dosent_exist(book_id)
-        with open('../DB/books_dict.json','r') as f:
-            books_dict = json.load(f)
-
-        item_removed = books_dict[str(book_id)]
-        del books_dict[str(book_id)]
-
-        with open('../DB/books_dict.json','w') as f:
-            json.dump(books_dict,f)
-     
-        return item_removed,202
+        item = db_books.find_one_and_delete({'id':book_id},{'_id':0})
+        return item,202
 
 class books(Resource):
     def get(self):
-        with open('../DB/books_dict.json', 'r') as openfile:
-            books_dict = json.load(openfile)
-        return books_dict
+        books_dict = list(db_books.find({}, {'_id': False}))
+        return books_dict[0] if len(books_dict) == 1 else books_dict
 
     def post(self):
         args = book_put_args.parse_args()
-  
-        abort_if_librarian_isnt_exist(args.LibrarianID)
+        args.dateAdded = date.isoformat(args.dateAdded)
+
         abort_if_book_exists(args.id)
-
-        with open('../DB/books_dict.json','r') as f:
-            books_dict = json.load(f)
-
-        books_dict.update({args.id:args})
-
-        with open('../DB/books_dict.json','w') as f:
-            json.dump(books_dict,f)
-        return books_dict[args.id], 201
+        abort_if_librarian_isnt_valid(args.LibrarianID)
+        db_books.insert_one(args)
+        del args['_id']
+       
+        return args, 201
     
 
 

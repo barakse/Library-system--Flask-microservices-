@@ -3,6 +3,11 @@ from Data import employee_put_args
 import json
 import sys
 sys.path.append('../')
+from dbConnection import db
+
+db_employees = db.get_collection("Employees")
+db_Librarians = db.get_collection("Librarians")
+
 
 def check_if_key_in_JSON_file_dict(id,path):
     with open(path) as openJson:
@@ -10,103 +15,54 @@ def check_if_key_in_JSON_file_dict(id,path):
     return str(id) in dict
 
 def abort_if_employee_id_dosent_exist(employee_id):
-    with open('../DB/employees_dict.json', 'r') as openfile:
-        empolyees_dict = json.load(openfile)
-    s = str(employee_id)
-    if s not in empolyees_dict:
-        abort(404, message="couldnt find, isnt VALID...")
+    if (db_employees.find_one({"id":employee_id}) is None):
+        abort(404, message="There isnt an employee with this ID...")
 
 def abort_if_empolyee_exists(employee_id):
-    with open('../DB/employees_dict.json', 'r') as openfile:
-        empolyees_dict = json.load(openfile)
-    print(empolyees_dict)
-    if employee_id in empolyees_dict:
+    if (db_employees.find_one({"id":employee_id}) is not None):
         abort(409, message="empolyee already exists with that ID...")
+    return 
 
 
 class employee(Resource):
     def get(self, employee_id):
         abort_if_employee_id_dosent_exist(employee_id)
-        with open('../DB/employees_dict.json', 'r') as openfile:
-            empolyees_dict = json.load(openfile)
-           
-        return empolyees_dict[str(employee_id)]
-    
+        empolyees_dict = db_employees.find_one({'id': employee_id}, {'_id':0})
+        return empolyees_dict
+        
     def delete(self, employee_id):
         abort_if_employee_id_dosent_exist(employee_id)
-        with open('../DB/employees_dict.json','r') as f:
-            employees_dict = json.load(f)
-        
-        item_removed = employees_dict[str(employee_id)]
-        employees_dict[str(employee_id)]['isFired'] = True
+        item = db_employees.find_one_and_update({'id':employee_id},{"$set":{'isFired':True}},{'_id':0})
 
-        with open('../DB/employees_dict.json','w') as f:
-            json.dump(employees_dict,f)
+        return item,202
 
-        if check_if_key_in_JSON_file_dict(employee_id,'../DB/librarian_dict.json'):
-            with open('../DB/librarian_dict.json','r') as f:
-                librarian_dict = json.load(f)
-        
-            item_removed = librarian_dict[str(employee_id)]
-            librarian_dict[str(employee_id)]['isFired'] = True
-
-            with open('../DB/librarian_dict.json','w') as f:
-                json.dump(librarian_dict,f)
-    
-        return item_removed,202
 
 class employees(Resource):
 
     def get(self):
-        print("Reg get")
-        with open('../DB/employees_dict.json', 'r') as openfile:
-            empolyees_dict = json.load(openfile)
-        return empolyees_dict
+        empolyees_dict = list(db_employees.find({}, {'_id': False}))
+        print(empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict)
+        return empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict
 
-    def post(self):
-            args = employee_put_args.parse_args()
+    def post(self, is_super = False, args = None):
+            if is_super is False:
+                args = employee_put_args.parse_args()
+
             abort_if_empolyee_exists(args.id)
-            print("Continue posting")
-            '''
-            with open("./DB/employees_dict.json", "r+") as outfile:
-                data = json.load(outfile)
-                print(data)
-                data.update({args.id:args})
-                json.dump(data, outfile)
-                #json.dump({args.id:args}, outfile)
-            '''
-            with open('../DB/employees_dict.json','r') as f:
-                dict = json.load(f)
-
             args.isFired = False
-            dict.update({args.id:args})
+            del args['yearsOfExperience']
+            db.Employees.insert_one(args)
 
-            with open('../DB/employees_dict.json','w') as f:
-                json.dump(dict,f)
-             
+            del args['_id']
             return args, 201
+
 
 class librarians(Resource):
     def post(self):
         args = employee_put_args.parse_args()
-        abort_if_empolyee_exists(args.id)
-        
-        with open('../DB/librarian_dict.json','r') as f:
-            dict = json.load(f)
+        new_args = {'id': args.id, 'yearsOfExperience': args.yearsOfExperience}
+        employees.post(employee_put_args, True, args)
+        db.Librarians.insert_one(new_args)
+        del new_args['_id']
 
-        args.isFired = False
-        dict.update({args.id:args})
-
-        with open('../DB/librarian_dict.json','w') as f:
-            json.dump(dict,f)
-        args2 = args.copy()
-        del args2['yearsOfExperience']
-
-        with open('../DB/employees_dict.json','r') as f:
-            dict = json.load(f)
-        dict.update({args.id:args2})
-        
-        with open('../DB/employees_dict.json','w') as f:
-            json.dump(dict,f)
-
-        return args, 201
+        return new_args, 201
