@@ -8,4 +8,28 @@ class Book:
         self.dateAdded = dateAdded
         self.LibrarianID  = LibrarianID 
 
- 
+'''
+book_validator = {
+      "bsonType": "object",
+      "required": [ "id", "name","age"],
+      "properties": 
+      {
+        "id": {
+          "bsonType": "int",
+          "description": "ID - Required."
+        },
+        "title": {
+          "bsonType": "string",
+          "description": "title - Required."
+        },
+        "dateAdded": {
+          "bsonType": "date",
+          "description": "dateAdded - Required."
+        },
+        "LibrarianID": {
+            "bsonType": "int",
+          "description": "LibrarianID - Required."
+        }
+       }
+    }
+'''
