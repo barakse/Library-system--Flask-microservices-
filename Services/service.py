@@ -1,68 +1,64 @@
-from flask_restful import Resource, abort
-from Data import employee_put_args
-import json
+from flask_restful import Resource, reqparse
 import sys
 sys.path.append('../')
-from dbConnection import db
+from Data.EmployeeData import EmployeeData
 
-db_employees = db.get_collection("Employees")
-db_Librarians = db.get_collection("Librarians")
+employees_collection_name = "Employees"
+librarians_collection_name = "Librarians"
+
+employee_put_args =  reqparse.RequestParser()
+employee_put_args.add_argument("id",type = int, help="id of the employee", required = True, location='form') 
+employee_put_args.add_argument("name", help="name of the employee", required = True,location='form')
+employee_put_args.add_argument("age",type = int, help="age of the employee", required = True, location='form')
+employee_put_args.add_argument("yearsOfExperience",type = int, help="years of experience of the employee", location='form')
 
 
-def check_if_key_in_JSON_file_dict(id,path):
-    with open(path) as openJson:
-        dict = json.load(openJson)
-    return str(id) in dict
-
-def abort_if_employee_id_dosent_exist(employee_id):
-    if (db_employees.find_one({"id":employee_id}) is None):
-        abort(404, message="There isnt an employee with this ID...")
-
-def abort_if_empolyee_exists(employee_id):
-    if (db_employees.find_one({"id":employee_id}) is not None):
-        abort(409, message="empolyee already exists with that ID...")
-    return 
 
 
 class employee(Resource):
+    employee_data = EmployeeData()
     def get(self, employee_id):
-        abort_if_employee_id_dosent_exist(employee_id)
-        empolyees_dict = db_employees.find_one({'id': employee_id}, {'_id':0})
-        return empolyees_dict
+        self.employee_data.abort_if_id_isnt_valid(employee_id, employees_collection_name, True)
+        return self.employee_data.get_employee(employee_id)
         
     def delete(self, employee_id):
-        abort_if_employee_id_dosent_exist(employee_id)
-        item = db_employees.find_one_and_update({'id':employee_id},{"$set":{'isFired':True}},{'_id':0})
-
-        return item,202
+        self.employee_data.abort_if_id_isnt_valid(employee_id, employees_collection_name, True)
+        return self.employee_data.delete_employee(employee_id), 202
 
 
 class employees(Resource):
+    employee_data = EmployeeData()
 
     def get(self):
-        empolyees_dict = list(db_employees.find({}, {'_id': False}))
-        print(empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict)
-        return empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict
+        return self.employee_data.get_employees()
 
     def post(self, is_super = False, args = None):
             if is_super is False:
                 args = employee_put_args.parse_args()
 
-            abort_if_empolyee_exists(args.id)
+            self.employee_data.abort_if_id_isnt_valid(args.id, employees_collection_name, False) # Data layer
+            
             args.isFired = False
             del args['yearsOfExperience']
-            db.Employees.insert_one(args)
+            self.employee_data.post_employees(args) # Data layer
 
             del args['_id']
             return args, 201
 
 
 class librarians(Resource):
+    employee_data = EmployeeData()
+    employees = employees() 
+
     def post(self):
+
         args = employee_put_args.parse_args()
+
         new_args = {'id': args.id, 'yearsOfExperience': args.yearsOfExperience}
-        employees.post(employee_put_args, True, args)
-        db.Librarians.insert_one(new_args)
+        
+        self.employees.post(True, args)
+
+        self.employee_data.post_librarian(new_args)
         del new_args['_id']
 
         return new_args, 201
