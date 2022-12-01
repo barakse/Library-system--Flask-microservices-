@@ -5,7 +5,7 @@ class Librarian(Employee):
     def __init__(self, id:int, name: string, age: int,yearsOfExperience: int) -> None:
         super().__init__(id, name, age)
         self.yearsOfExperience  = yearsOfExperience
-
+'''
 librarian_validator = {
       "bsonType": "object",
       "required": [ "id", "name","age","yearsOfExperience"],
@@ -29,7 +29,24 @@ librarian_validator = {
         },
         "isfired": {
             "bsonType": "bool"
-        }
+        },
     }
 }
-
+'''
+librarian_validator = {
+    "$jsonSchema":{
+        "bsonType": "object",
+        "required" : ["id", "yearsOfExperience"],
+        "properties": 
+        {
+          "id": {
+            "bsonType": "int",
+            "description": "ID - Required."
+          },
+          "yearsOfExperience": {
+            "bsonType": "int",
+            "description": "yearsOfExperience - Required."
+          },
+        }
+      }
+}

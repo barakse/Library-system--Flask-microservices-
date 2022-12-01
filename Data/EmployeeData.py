@@ -21,7 +21,6 @@ class EmployeeData:
 
     def get_employees(self):
         empolyees_dict = list(db_Employees.find({}, {'_id': False}))
-        print(empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict)
         return empolyees_dict[0] if len(empolyees_dict) == 1 else empolyees_dict
         
     def post_employees(self, args):

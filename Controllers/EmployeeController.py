@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 from Services.service import employees, librarians, employee
 
-app = Flask(__name__)
+app = Flask("Employee-Librarian")
 api = Api(app)
 
 api.add_resource(employee, "/employees/<int:employee_id>")
