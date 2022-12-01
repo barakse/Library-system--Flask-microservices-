@@ -4,7 +4,7 @@ import sys
 sys.path.append('../')
 from Services.BookService import book, books
 
-app = Flask(__name__)
+app = Flask("Book")
 api = Api(app)
 
 api.add_resource(book, "/books/<int:book_id>")

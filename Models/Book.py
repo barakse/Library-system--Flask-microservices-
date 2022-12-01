@@ -13,15 +13,8 @@ book_validator = {
       "bsonType": "object",
       "required": [ "id", "name","age"],
       "properties": 
-      {
-        "id": {
-          "bsonType": "int",
-          "description": "ID - Required."
-        },
-        "title": {
-          "bsonType": "string",
-          "description": "title - Required."
-        },
+  
+
         "dateAdded": {
           "bsonType": "date",
           "description": "dateAdded - Required."
@@ -33,3 +26,29 @@ book_validator = {
        }
     }
 '''
+
+book_validator = {
+    "$jsonSchema":{
+        "bsonType": "object",
+        "required" : ["id", "name", "title", "dateAdded", "LibrarianID"],
+        "properties": 
+        {
+          "id": {
+            "bsonType": "int",
+            "description": "ID - Required."
+          },
+          "title": {
+            "bsonType": "string",
+            "description": "title - Required."
+          },
+          "dateAdded": {
+            "bsonType": "date",
+            "description": "dateAdded - Required."
+          },
+          "LibrarianID": {
+            "bsonType": "int",
+            "description": "LibrarianID - Required."
+          },
+        }
+      }
+}

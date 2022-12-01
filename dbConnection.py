@@ -1,27 +1,25 @@
 from pymongo import MongoClient
-
+from Models.Employee import employee_validator
+from Models.Librarian import librarian_validator
+from Models.Book import book_validator
 cluster = "mongodb+srv://barakse222:123MongoDB@library-flask.censagw.mongodb.net/Library-Flask?retryWrites=true&w=majority&authSource=admin"
 client = MongoClient(cluster)
 
-print(client.list_database_names())
-
 db = client["Library-Flask"]
-print(db.list_collection_names())
-my_collection = db["Employees"]
 
-#==================FROM DATA2====================
-#db.runCommand( { collMod: "Employees",validator={
- #   validator})
- 
-def buildCollection(name):
+names_in_collections = db.list_collection_names()
+names_to_add_collections = ["Librarians","Employees","Books"]
+
+def buildCollection(name, validator_checker):
     if name not in db.list_collection_names():
         db.create_collection(name)
     
-    #db.command("collMod", name, validator=validatork)
+    db.command("collMod", name, validator=validator_checker)
 try:
-    buildCollection("Employees")
-    print(db.list_collection_names())
-except:
-    print("FAILED")
-#buildCollection("Librarians", librarian_validator)
-#buildCollection("Books", book_validator)
+    active = False
+    if active:
+        buildCollection("Librarians", librarian_validator)
+        buildCollection("Employees", employee_validator)
+        buildCollection("Books", book_validator)
+except Exception as e:
+    print(e)
