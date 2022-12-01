@@ -3,9 +3,6 @@ import sys
 sys.path.append('../')
 from Data.EmployeeData import EmployeeData
 
-employees_collection_name = "Employees"
-librarians_collection_name = "Librarians"
-
 employee_put_args =  reqparse.RequestParser()
 employee_put_args.add_argument("id",type = int, help="id of the employee", required = True, location='form') 
 employee_put_args.add_argument("name", help="name of the employee", required = True,location='form')
@@ -13,10 +10,12 @@ employee_put_args.add_argument("age",type = int, help="age of the employee", req
 employee_put_args.add_argument("yearsOfExperience",type = int, help="years of experience of the employee", location='form')
 
 
-
+employees_collection_name = "Employees"
+librarians_collection_name = "Librarians"
 
 class employee(Resource):
     employee_data = EmployeeData()
+    
     def get(self, employee_id):
         self.employee_data.abort_if_id_isnt_valid(employee_id, employees_collection_name, True)
         return self.employee_data.get_employee(employee_id)
